@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "microtracker"
+version = "0.1.0"
+description = "Python tools for microorganism tracking and trajectory analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "opencv-python",
+    "scikit-image",
+    "matplotlib",
+    "PyQt5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
