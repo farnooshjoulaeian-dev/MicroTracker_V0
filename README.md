@@ -1,6 +1,6 @@
-# MicroTracker: A Python toolkit for microorganism tracking and trajectory analysis
+# MicroTracker
 
-Interactive tracking software for microscopy videos.
+Interactive tracking software based on Python for microscopy videos.
 
 Current features:
 - Cell detection
