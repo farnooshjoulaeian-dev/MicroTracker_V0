@@ -26,6 +26,3 @@ PYTHONPATH=src python -m unittest discover -s tests
 
 ## Notes
 
-Generated analysis results are written to `outputs/`, which is ignored by Git.
-Large microscopy videos should stay outside the repository or be added through a
-separate data-release workflow.
