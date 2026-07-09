@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 import cv2
 from pathlib import Path
 
@@ -26,20 +27,32 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("MicroTracker")
         self.setGeometry(100, 100, 900, 650)
-
+         # Video
         self.cap = None
         self.video_path = None
         self.current_frame = 0
         self.n_frames = 0
-
+        # Tracking
         self.selected_cell = None
         self.trajectory_points = []
-
+        # Playback
         self.is_playing = False
         self.tracking_active = False
-
+    
         self.timer = QTimer()
         self.timer.timeout.connect(self.next_frame)
+
+        self.object_polarity = "bright" #darkfield, flourecent
+        #self.object_polarity = "dark" #brightfield
+
+
+        # ROI
+       # self.use_roi = True
+        #self.roi_x = 500
+        #self.roi_y = 200
+        #self.roi_w = 600
+        #self.roi_h = 400
+
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -109,6 +122,7 @@ class MainWindow(QMainWindow):
         track_button.clicked.connect(self.start_tracking)
         self.frame_slider.valueChanged.connect(self.slider_changed)
         self.video_label.clicked.connect(self.video_clicked)
+        save_button.clicked.connect(self.save_trajectory)
 
         # Shortcuts
         QShortcut(QKeySequence("Space"), self, activated=self.toggle_play)
@@ -144,8 +158,11 @@ class MainWindow(QMainWindow):
         self.frame_slider.setMaximum(self.n_frames - 1)
         self.frame_slider.setValue(0)
         self.show_frame(0)
+        
+
 
     def show_frame(self, frame_number):
+
         if self.cap is None:
             return
 
@@ -155,8 +172,10 @@ class MainWindow(QMainWindow):
         if not ret:
             return
 
+        # Store original frame
         self.current_frame_bgr = frame
         self.frame_height, self.frame_width = frame.shape[:2]
+
 
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         self.current_frame_gray = frame_gray
@@ -261,6 +280,7 @@ class MainWindow(QMainWindow):
             self.current_frame_bgr,
             frame_number=self.current_frame,
             min_area_px=self.min_area_box.value(),
+            
         )
 
         selected = find_nearest_detection(
@@ -272,14 +292,19 @@ class MainWindow(QMainWindow):
         if selected is None:
             print("No cell near click.")
             return
-
         self.selected_cell = selected
-        self.trajectory_points = [{
+        manual_point = {
             "frame": self.current_frame,
             "x_px": float(selected["x_px"]),
             "y_px": float(selected["y_px"]),
             "source": "manual",
-        }]
+        }
+
+        if len(self.trajectory_points) == 0:
+            self.trajectory_points = [manual_point]
+        else:
+            self.trajectory_points.append(manual_point)
+
 
         print(
             "Selected cell:",
@@ -353,7 +378,8 @@ class MainWindow(QMainWindow):
         )
 
         if selected is None:
-            print("Tracking lost at frame:", self.current_frame)
+
+            print("Tracking paused at frame:", self.current_frame)
             self.timer.stop()
             self.is_playing = False
             self.tracking_active = False
@@ -369,6 +395,29 @@ class MainWindow(QMainWindow):
         })
 
         self.show_frame(self.current_frame)
+
+    def save_trajectory(self):
+
+        if len(self.trajectory_points) == 0:
+            print("No traj to save")
+            return
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save traj",
+            "traj.npy",
+            "Numpy files(*.npy);;All files (*)"
+        )
+        if save_path == "":
+            return
+        
+        np.save(save_path,self.trajectory_points)
+        
+        print("Traj saved", save_path)
+
+
+
+
+
 
 
 if __name__ == "__main__":

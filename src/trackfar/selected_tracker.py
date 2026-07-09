@@ -58,26 +58,35 @@ def track_next_frame(
     max_distance_px=20,
     pixel_size=1.178,
 ):
-    """
-    Detect cells in the current frame and select the closest plausible
-    continuation of the previously selected cell.
-    """
+    x_prev, y_prev = previous_position_px
+    r = max_distance_px
 
-    detections, corrected, thresholded_img, closed_mask, label_image = (
-        detect_cells_in_frame(
-            frame,
-            frame_number=frame_number,
-            pixel_size=pixel_size,
-        )
+    x1 = max(0, int(x_prev - r))
+    x2 = min(frame.shape[1], int(x_prev + r))
+    y1 = max(0, int(y_prev - r))
+    y2 = min(frame.shape[0], int(y_prev + r))
+
+    roi = frame[y1:y2, x1:x2]
+
+    detections, corrected, thresholded_img, closed_mask, label_image = detect_cells_in_frame(
+        roi,
+        frame_number=frame_number,
+        pixel_size=pixel_size,
     )
 
-    selected_detection = find_nearest_detection(
-        detections=detections,
-        previous_position_px=previous_position_px,
+    if len(detections) == 0:
+        return None, detections
+
+    detections["x_px"] += x1
+    detections["y_px"] += y1
+
+    selected = find_nearest_detection(
+        detections,
+        previous_position_px,
         max_distance_px=max_distance_px,
     )
 
-    return selected_detection, detections
+    return selected, detections
 
 
 
